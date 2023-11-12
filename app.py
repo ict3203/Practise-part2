@@ -1,40 +1,42 @@
-from flask import Flask, render_template, request, redirect, url_for
-from markupsafe import escape
+from flask import Flask, render_template, request, redirect, url_for, flash
+from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
+app.secret_key = 'your_secret_key'  # Change this to a random secret key
 
-def is_xss_attack(search_term):
-    # Simple check for potential XSS attack (you may need more sophisticated validation)
-    return '<script>' in search_term
+# Function to check if the password meets the requirements
+def is_valid_password(password):
+    # Add your password requirements here (e.g., minimum length)
+    if len(password) < 8:
+        return False
 
-def is_sql_injection_attack(search_term):
-    # Simple check for potential SQL injection attack (you may need more sophisticated validation)
-    return "'" in search_term
+    # Block common passwords from the list
+    common_passwords = set(line.strip() for line in open('common_passwords.txt'))
+    if password in common_passwords:
+        return False
+
+    # Add more password requirements as needed
+    return True
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
-        search_term = request.form['search_term']
+        password = request.form['password']
 
-        # Validate for XSS attack
-        if is_xss_attack(search_term):
-            # If XSS attack, clear input and remain on home page
-            return render_template('home.html', error='Invalid search term. Please try again.')
+        # Validate the password
+        if not is_valid_password(password):
+            flash('Invalid password. Please meet the password requirements.')
+            return redirect(url_for('home'))
 
-        # Validate for SQL injection attack
-        if is_sql_injection_attack(search_term):
-            # If SQL injection attack, clear input and remain on home page
-            return render_template('home.html', error='Invalid search term. Please try again.')
-
-        # If input is valid, go to a new page to display the search term
-        return redirect(url_for('result', search_term=escape(search_term)))
+        # If password is valid, go to the welcome page
+        return redirect(url_for('welcome', password=password))
 
     # For GET requests or initial load, render the home page
-    return render_template('home.html', error=None)
+    return render_template('home.html')
 
-@app.route('/result/<search_term>')
-def result(search_term):
-    return render_template('result.html', search_term=escape(search_term))
+@app.route('/welcome/<password>')
+def welcome(password):
+    return render_template('welcome.html', password=password)
 
 if __name__ == '__main__':
     app.run(debug=True)

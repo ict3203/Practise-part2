@@ -8,14 +8,16 @@
 <body>
     <h1>Home Page</h1>
     
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <p style="color: red;">{{ messages[0] }}</p>
+        {% endif %}
+    {% endwith %}
     
     <form method="post" action="{{ url_for('home') }}">
-        <label for="search_term">Search Term:</label>
-        <input type="text" id="search_term" name="search_term" required>
-        <input type="submit" value="Search">
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <input type="submit" value="Login">
     </form>
 </body>
 </html>
